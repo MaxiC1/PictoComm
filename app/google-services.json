@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "611992244786",
+    "project_id": "pictocomm-3a117",
+    "storage_bucket": "pictocomm-3a117.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:611992244786:android:69518ce706428cdf25622b",
+        "android_client_info": {
+          "package_name": "com.inacap.picto_comm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3M-fbCnXTUG8qRlr7yybtp2ccx0GD99c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

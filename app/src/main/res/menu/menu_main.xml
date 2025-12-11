@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_gestionar_pictogramas"
+        android:title="@string/gestionar_pictogramas"
+        android:icon="@drawable/ic_check"
+        app:showAsAction="ifRoom"
+        android:visible="false" />
+
+    <item
+        android:id="@+id/action_historial"
+        android:title="@string/menu_historial"
+        android:icon="@drawable/ic_history"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_cambiar_usuario"
+        android:title="Cambiar Usuario"
+        android:icon="@drawable/ic_person"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_info"
+        android:title="@string/menu_info"
+        android:icon="@drawable/ic_info"
+        app:showAsAction="ifRoom" />
+
+</menu>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_pictograma"
+    android:layout_width="120dp"
+    android:layout_height="120dp"
+    android:layout_margin="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="@color/categoria_default_light">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:gravity="center">
+
+        <!-- Contenedor del icono con fondo de color -->
+        <FrameLayout
+            android:id="@+id/frame_icono"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/bg_icono_pictograma"
+            android:layout_gravity="center">
+
+            <ImageView
+                android:id="@+id/iv_icono"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/icono_pictograma"
+                android:scaleType="fitCenter"
+                tools:src="@drawable/ic_person" />
+
+        </FrameLayout>
+
+        <!-- Texto del pictograma -->
+        <TextView
+            android:id="@+id/tv_texto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/pictograma"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:textAlignment="center"
+            android:maxLines="2"
+            android:ellipsize="end"
+            tools:text="Yo" />
+
+        <!-- Indicador de favorito -->
+        <ImageView
+            android:id="@+id/iv_favorito"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginTop="2dp"
+            android:src="@drawable/ic_favorite"
+            android:contentDescription="@string/favorito"
+            android:visibility="gone"
+            app:tint="@color/favorito_red"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

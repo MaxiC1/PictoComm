@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:name=".PictoCommApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PictoComm">
+        
+        <!-- SplashActivity - Pantalla inicial (LAUNCHER) -->
+        <activity
+            android:name=".ui.screens.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.PictoComm.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- ConfiguracionInicialActivity - Primera configuración -->
+        <activity
+            android:name=".ui.screens.ConfiguracionInicialActivity"
+            android:exported="false"
+            android:label="Configuración Inicial" />
+
+        <!-- SeleccionPerfilActivity - Selección de usuario -->
+        <activity
+            android:name=".ui.screens.SeleccionPerfilActivity"
+            android:exported="false"
+            android:label="Seleccionar Perfil" />
+
+        <!-- PinActivity - Verificación de PIN -->
+        <activity
+            android:name=".ui.screens.PinActivity"
+            android:exported="false"
+            android:label="Verificar PIN" />
+
+        <!-- MainActivity - Pantalla principal -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+
+        <!-- CrearPictogramaActivity - Crear nuevo pictograma -->
+        <activity
+            android:name=".ui.screens.CrearPictogramaActivity"
+            android:exported="false"
+            android:label="@string/crear_pictograma"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- GestionarPictogramasActivity - Gestionar pictogramas pendientes (solo PADRE) -->
+        <activity
+            android:name=".ui.screens.GestionarPictogramasActivity"
+            android:exported="false"
+            android:label="@string/gestionar_pictogramas"
+            android:parentActivityName=".MainActivity" />
+
+    </application>
+
+</manifest>

@@ -1,0 +1,80 @@
+<resources>
+    <string name="app_name">PictoComm</string>
+
+    <!-- Barra de Oración -->
+    <string name="construye_oracion">Construye tu oración...</string>
+    <string name="limpiar_oracion">Limpiar oración</string>
+    <string name="reproducir">Reproducir</string>
+    <string name="guardar">Guardar</string>
+    <string name="eliminar_pictograma">Eliminar pictograma</string>
+
+    <!-- Pictogramas -->
+    <string name="pictograma">Pictograma</string>
+    <string name="icono_pictograma">Icono del pictograma</string>
+    <string name="favorito">Favorito</string>
+
+    <!-- Categorías -->
+    <string name="categoria">Categoría</string>
+    <string name="icono_categoria">Icono de categoría</string>
+    <string name="todos">Todos</string>
+    <string name="favoritos">Favoritos</string>
+    <string name="personas">Personas</string>
+    <string name="acciones">Acciones</string>
+    <string name="cosas">Cosas</string>
+    <string name="cualidades">Cualidades</string>
+    <string name="lugares">Lugares</string>
+    <string name="tiempo">Tiempo</string>
+
+    <!-- Estados -->
+    <string name="no_pictogramas">No hay pictogramas disponibles</string>
+    <string name="cargando">Cargando...</string>
+
+    <!-- Mensajes -->
+    <string name="oracion_guardada">Oración guardada exitosamente</string>
+    <string name="oracion_no_valida">Necesitas al menos 2 pictogramas para guardar</string>
+    <string name="oracion_reproducida">Reproduciendo oración...</string>
+    <string name="favorito_agregado">Agregado a favoritos</string>
+    <string name="favorito_eliminado">Eliminado de favoritos</string>
+
+    <!-- Menu -->
+    <string name="menu_info">Información</string>
+    <string name="menu_ajustes">Ajustes</string>
+    <string name="menu_historial">Historial</string>
+
+    <!-- Descripciones de contenido -->
+    <string name="icono_app">Icono de la aplicación</string>
+    <string name="menu_principal">Menú principal</string>
+
+    <!-- Crear Pictograma -->
+    <string name="crear_pictograma">Crear pictograma</string>
+    <string name="agregar_pictograma">Agregar pictograma</string>
+    <string name="texto_pictograma">Texto del pictograma</string>
+    <string name="ingrese_texto">Ingrese el texto</string>
+    <string name="seleccionar_categoria">Seleccionar categoría</string>
+    <string name="seleccionar_icono">Seleccionar icono</string>
+    <string name="usar_camara">Usar cámara</string>
+    <string name="pictograma_creado">Pictograma creado exitosamente</string>
+    <string name="pictograma_pendiente_aprobacion">Tu pictograma está pendiente de aprobación</string>
+    <string name="error_texto_vacio">Debes ingresar un texto</string>
+    <string name="error_categoria_no_seleccionada">Debes seleccionar una categoría</string>
+    <string name="error_icono_no_seleccionado">Debes seleccionar un icono</string>
+    <string name="camara_proximamente">Funcionalidad de cámara: Esta función permitirá tomar una foto con la cámara para usar como pictograma personalizado. Estará disponible en la próxima versión.</string>
+
+    <!-- Gestionar Pictogramas -->
+    <string name="gestionar_pictogramas">Gestionar pictogramas</string>
+    <string name="pictogramas_pendientes">Pictogramas pendientes</string>
+    <string name="aprobar">Aprobar</string>
+    <string name="rechazar">Rechazar</string>
+    <string name="pictograma_aprobado">Pictograma aprobado</string>
+    <string name="pictograma_rechazado">Pictograma rechazado</string>
+    <string name="no_pictogramas_pendientes">No hay pictogramas pendientes de aprobación</string>
+    <string name="creado_por">Creado por:</string>
+    <string name="fecha_creacion">Fecha:</string>
+    <string name="categoria_pictograma">Categoría:</string>
+    <string name="confirmar_rechazo">¿Estás seguro de que deseas rechazar este pictograma?</string>
+    <string name="confirmar">Confirmar</string>
+    <string name="cancelar">Cancelar</string>
+
+    <!-- Contador de pendientes -->
+    <string name="pictogramas_pendientes_badge">%1$d pendientes</string>
+</resources>

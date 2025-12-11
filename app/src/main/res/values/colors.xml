@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Colores básicos -->
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Colores principales de Material Design 3 -->
+    <color name="primary">#FF6200EE</color>
+    <color name="primary_dark">#FF3700B3</color>
+    <color name="primary_container">#FFE1BEE7</color>
+    <color name="on_primary">#FFFFFFFF</color>
+    <color name="on_primary_container">#FF21005D</color>
+
+    <color name="secondary">#FF03DAC6</color>
+    <color name="secondary_container">#FFB2DFDB</color>
+    <color name="on_secondary">#FF000000</color>
+
+    <color name="background">#FFF5F5F5</color>
+    <color name="surface">#FFFFFFFF</color>
+    <color name="on_background">#FF1C1B1F</color>
+    <color name="on_surface">#FF1C1B1F</color>
+
+    <!-- Colores de texto -->
+    <color name="text_primary">#FF000000</color>
+    <color name="text_secondary">#FF757575</color>
+    <color name="text_hint">#FFBDBDBD</color>
+
+    <!-- Otros colores de UI -->
+    <color name="divider">#FFE0E0E0</color>
+    <color name="favorito_red">#FFF44336</color>
+
+    <!-- Colores por categoría (basados en Categoria.kt) -->
+    <!-- PERSONAS - Verde -->
+    <color name="categoria_personas">#FF4CAF50</color>
+    <color name="categoria_personas_light">#FFE8F5E9</color>
+
+    <!-- ACCIONES - Azul -->
+    <color name="categoria_acciones">#FF2196F3</color>
+    <color name="categoria_acciones_light">#FFE3F2FD</color>
+
+    <!-- COSAS - Amarillo -->
+    <color name="categoria_cosas">#FFFFC107</color>
+    <color name="categoria_cosas_light">#FFFFF8E1</color>
+
+    <!-- CUALIDADES - Naranja -->
+    <color name="categoria_cualidades">#FFFF5722</color>
+    <color name="categoria_cualidades_light">#FFFBE9E7</color>
+
+    <!-- LUGARES - Morado -->
+    <color name="categoria_lugares">#FF9C27B0</color>
+    <color name="categoria_lugares_light">#FFF3E5F5</color>
+
+    <!-- TIEMPO - Cian -->
+    <color name="categoria_tiempo">#FF00BCD4</color>
+    <color name="categoria_tiempo_light">#FFE0F7FA</color>
+
+    <!-- Color por defecto para categoría no especificada -->
+    <color name="categoria_default">#FF9E9E9E</color>
+    <color name="categoria_default_light">#FFF5F5F5</color>
+</resources>
