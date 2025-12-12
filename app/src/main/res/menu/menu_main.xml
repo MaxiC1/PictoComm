@@ -6,7 +6,14 @@
         android:id="@+id/action_gestionar_pictogramas"
         android:title="@string/gestionar_pictogramas"
         android:icon="@drawable/ic_check"
-        app:showAsAction="ifRoom"
+        app:showAsAction="never"
+        android:visible="false" />
+
+    <item
+        android:id="@+id/action_editar_eliminar_pictogramas"
+        android:title="Editar/Eliminar Pictogramas"
+        android:icon="@android:drawable/ic_menu_edit"
+        app:showAsAction="never"
         android:visible="false" />
 
     <item

@@ -16,11 +16,16 @@ import kotlinx.coroutines.launch
 
 /**
  * Configuración inicial de la app (primera vez)
- * 
+ *
+ * DEPRECATED: Esta actividad ya no se usa.
+ * El padre ahora se registra con Google Sign-In (GoogleSignInActivity)
+ * Los hijos se crean desde el perfil del padre en Firebase Firestore
+ *
  * Permite crear:
- * - Usuario PADRE (con PIN)
- * - Usuario HIJO (sin PIN)
+ * - Usuario PADRE (DEPRECATED - ahora usa Google Sign-In)
+ * - Usuario HIJO (DEPRECATED - se crean desde Firebase Console o futuro UI)
  */
+@Deprecated("El padre se registra con Google Sign-In. Esta actividad ya no se usa.")
 class ConfiguracionInicialActivity : AppCompatActivity() {
 
     private lateinit var etNombrePadre: EditText
@@ -73,7 +78,7 @@ class ConfiguracionInicialActivity : AppCompatActivity() {
         }
 
         // Crear usuarios
-        val repository = (application as PictoCommApplication).repository
+        val repository = (application as PictoCommApplication).firebaseRepository
         val sessionManager = (application as PictoCommApplication).sessionManager
 
         lifecycleScope.launch {

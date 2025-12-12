@@ -1,8 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("kotlin-kapt") // Para Room Database
-    id("com.android.application")
     id("com.google.gms.google-services")
 }
 
@@ -52,8 +50,14 @@ android {
 }
 
 dependencies {
-    // Firebase
-    implementation(platform("com.google.firebase:firebase-bom:34.6.0"))
+    // Firebase - with explicit versions to ensure compatibility
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-auth:23.1.0")
+    implementation("com.google.firebase:firebase-firestore:25.1.1")
+    implementation("com.google.firebase:firebase-storage:21.0.1")
+
+    // Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     // Core Android
     implementation(libs.androidx.core.ktx)
@@ -74,13 +78,7 @@ dependencies {
     // Coroutines para operaciones asíncronas
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // Room Database para persistencia local
-    val roomVersion = "2.6.1"
-    implementation("androidx.room:room-runtime:$roomVersion")
-    implementation("androidx.room:room-ktx:$roomVersion")
-    kapt("androidx.room:room-compiler:$roomVersion")
-
-    // Gson para serialización JSON
+    // Gson para serialización JSON (Firebase lo usa también)
     implementation("com.google.code.gson:gson:2.10.1")
 
     // Testing

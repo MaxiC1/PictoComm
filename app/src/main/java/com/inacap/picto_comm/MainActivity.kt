@@ -27,25 +27,15 @@ import com.inacap.picto_comm.ui.adapters.PictogramaAdapter
 import com.inacap.picto_comm.ui.adapters.TipoItemCategoria
 import com.inacap.picto_comm.ui.screens.CrearPictogramaActivity
 import com.inacap.picto_comm.ui.screens.GestionarPictogramasActivity
+import com.inacap.picto_comm.ui.screens.GestionarTodosPictogramasActivity
 import com.inacap.picto_comm.ui.screens.SeleccionPerfilActivity
 import com.inacap.picto_comm.ui.viewmodel.ViewModelDemo
 import kotlinx.coroutines.launch
 import java.util.Locale
 
 /**
- * Activity principal de PictoComm - Versión XML (sin Jetpack Compose)
- *
- * PUNTO DE ENTRADA DE LA APLICACIÓN
- *
- * CARACTERÍSTICAS:
- * - Sistema de comunicación mediante pictogramas
- * - Construcción de oraciones por selección visual
- * - Predicción inteligente de palabras
- * - Text-to-Speech en español
- * - Sistema de favoritos (temporal)
- *
- * IMPORTANTE:
- * Los datos NO persisten al cerrar la aplicación (versión demo)
+ * Activity principal de PictoComm
+ * Permite construir oraciones con pictogramas y reproducirlas con voz
  */
 class MainActivity : AppCompatActivity() {
 
@@ -234,14 +224,36 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Guarda la oración actual (simulado en versión demo)
+     * Guarda la oración actual en Firebase
      */
     private fun guardarOracion() {
-        val guardado = viewModel.guardarOracion()
-        if (guardado) {
-            Toast.makeText(this, R.string.oracion_guardada, Toast.LENGTH_SHORT).show()
-        } else {
+        val (puedeGuardar, datos) = viewModel.guardarOracion()
+        if (!puedeGuardar) {
             Toast.makeText(this, R.string.oracion_no_valida, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Parsear datos: "id1,id2,id3|texto completo"
+        val partes = datos.split("|")
+        if (partes.size != 2) {
+            Toast.makeText(this, "Error al preparar la oración", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val pictogramaIds = partes[0].split(",").filter { it.isNotEmpty() }
+        val textoCompleto = partes[1]
+
+        // Guardar en Firebase
+        val firebaseRepository = (application as PictoCommApplication).firebaseRepository
+        lifecycleScope.launch {
+            try {
+                firebaseRepository.guardarOracion(pictogramaIds, textoCompleto)
+                Toast.makeText(this@MainActivity, R.string.oracion_guardada, Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity,
+                    "Error al guardar oración: ${e.message}",
+                    Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -324,39 +336,39 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Carga pictogramas desde la base de datos Room
+     * Carga pictogramas desde Firebase Firestore
      */
     private fun cargarPictogramasDesdeBaseDatos() {
-        val repository = (application as PictoCommApplication).repository
+        val firebaseRepository = (application as PictoCommApplication).firebaseRepository
         val sessionManager = (application as PictoCommApplication).sessionManager
-        
+
         lifecycleScope.launch {
             try {
                 // Obtener usuario actual
                 val tipoUsuario = sessionManager.obtenerTipoUsuario()
-                
-                // Cargar pictogramas según el tipo de usuario
-                val pictogramas = if (tipoUsuario == TipoUsuario.PADRE.name) {
+
+                // Observar pictogramas en tiempo real desde Firebase
+                val flowPictogramas = if (tipoUsuario == TipoUsuario.PADRE.name) {
                     // PADRE ve todos los pictogramas
-                    repository.obtenerTodosPictogramasList()
+                    firebaseRepository.obtenerTodosPictogramas()
                 } else {
                     // HIJO solo ve pictogramas aprobados
-                    repository.obtenerPictogramasAprobados()
+                    firebaseRepository.obtenerPictogramasAprobados()
                 }
-                
-                // Si no hay pictogramas en BD, cargar desde Mock
-                if (pictogramas.isEmpty()) {
-                    Toast.makeText(this@MainActivity, "Cargando pictogramas iniciales...", Toast.LENGTH_SHORT).show()
-                    viewModel.cargarTodosPictogramas()
-                } else {
-                    // Convertir a PictogramaSimple y cargar en ViewModel
+
+                // Recopilar Flow y actualizar ViewModel
+                flowPictogramas.collect { pictogramas ->
+                    // Cargar pictogramas en ViewModel
                     viewModel.cargarPictogramasDesdeBaseDatos(pictogramas)
                 }
-                
+
             } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "Error al cargar pictogramas: ${e.message}", Toast.LENGTH_SHORT).show()
-                // Fallback a datos mock
-                viewModel.cargarTodosPictogramas()
+                // Solo mostrar error si no es una cancelación normal
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    Toast.makeText(this@MainActivity,
+                        "Error al cargar pictogramas: ${e.message}",
+                        Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -376,10 +388,15 @@ class MainActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
 
-        // Mostrar opción de gestionar pictogramas solo para PADRE
+        // Mostrar opciones de administración solo para PADRE
         val sessionManager = (application as PictoCommApplication).sessionManager
+        val esPadre = sessionManager.obtenerTipoUsuario() == TipoUsuario.PADRE.name
+
         val menuGestionar = menu?.findItem(R.id.action_gestionar_pictogramas)
-        menuGestionar?.isVisible = sessionManager.obtenerTipoUsuario() == TipoUsuario.PADRE.name
+        menuGestionar?.isVisible = esPadre
+
+        val menuEditarEliminar = menu?.findItem(R.id.action_editar_eliminar_pictogramas)
+        menuEditarEliminar?.isVisible = esPadre
 
         return true
     }
@@ -388,6 +405,11 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_gestionar_pictogramas -> {
                 val intent = Intent(this, GestionarPictogramasActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            R.id.action_editar_eliminar_pictogramas -> {
+                val intent = Intent(this, GestionarTodosPictogramasActivity::class.java)
                 startActivity(intent)
                 true
             }
@@ -457,9 +479,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Recargar pictogramas al volver a la actividad
-        // Esto asegura que se muestren los pictogramas recién aprobados o creados
-        cargarPictogramasDesdeBaseDatos()
+        // No es necesario recargar aquí porque el Flow de Firebase
+        // se actualiza automáticamente en tiempo real
     }
 
     override fun onDestroy() {

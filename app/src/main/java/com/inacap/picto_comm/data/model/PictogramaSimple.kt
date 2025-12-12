@@ -51,7 +51,9 @@ data class PictogramaSimple(
     val creadoPor: String = "",             // ID del usuario creador (vacío = sistema)
     val tipoImagen: TipoImagen = TipoImagen.ICONO,
     val urlImagen: String = "",             // URL de Firebase Storage para fotos
-    val fechaCreacion: Long = System.currentTimeMillis()
+    val fechaCreacion: Long = System.currentTimeMillis(),
+    val frecuenciaUso: Int = 0,             // Contador de veces usado
+    val padreId: String = ""                // ID del padre (para filtrar por familia)
 ) {
     /**
      * Convierte el pictograma a un Map para Firestore
@@ -67,7 +69,9 @@ data class PictogramaSimple(
             "creadoPor" to creadoPor,
             "tipoImagen" to tipoImagen.name,
             "urlImagen" to urlImagen,
-            "fechaCreacion" to fechaCreacion
+            "fechaCreacion" to fechaCreacion,
+            "frecuenciaUso" to frecuenciaUso,
+            "padreId" to padreId
         )
     }
 
@@ -94,7 +98,9 @@ data class PictogramaSimple(
                     TipoImagen.ICONO
                 },
                 urlImagen = map["urlImagen"] as? String ?: "",
-                fechaCreacion = map["fechaCreacion"] as? Long ?: System.currentTimeMillis()
+                fechaCreacion = map["fechaCreacion"] as? Long ?: System.currentTimeMillis(),
+                frecuenciaUso = (map["frecuenciaUso"] as? Long)?.toInt() ?: 0,
+                padreId = map["padreId"] as? String ?: ""
             )
         }
     }

@@ -4,7 +4,15 @@
       "Bash(./gradlew build --dry-run)",
       "Bash(dir:*)",
       "Bash(tree:*)",
-      "Bash(git rev-parse:*)"
+      "Bash(git rev-parse:*)",
+      "Bash(cat:*)",
+      "Bash(gradlew.bat clean build:*)",
+      "Bash(./gradlew clean build:*)",
+      "Bash(test:*)",
+      "Bash(./gradlew signingReport:*)",
+      "Bash(keytool:*)",
+      "Bash(gradlew.bat build:*)",
+      "Bash(.gradlew.bat build:*)"
     ],
     "deny": [],
     "ask": []

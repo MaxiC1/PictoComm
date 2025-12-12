@@ -12,13 +12,15 @@ enum class TipoUsuario {
  * Modelo de datos para Usuario
  * Se almacena en Firestore en la colección "usuarios"
  */
+@com.google.firebase.firestore.IgnoreExtraProperties
 data class Usuario(
-    val id: String = "",                    // ID único del usuario (Firebase Auth UID)
+    val id: String = "",                    // ID único del usuario (Firebase Auth UID para padre, auto-generado para hijos)
     val nombre: String = "",                // Nombre del usuario
     val tipo: TipoUsuario = TipoUsuario.HIJO, // Tipo de usuario
-    val pin: String = "",                   // PIN de 4 dígitos (solo para PADRE)
-    val email: String = "",                 // Email (opcional, para PADRE)
-    val fechaCreacion: Long = System.currentTimeMillis(), // Timestamp de creación
+    val pin: String = "",                   // PIN de 4 dígitos (DEPRECATED - usar Google Sign-In)
+    val email: String = "",                 // Email (requerido para PADRE con Google)
+    val photoUrl: String = "",              // URL de foto de perfil (de Google)
+    val padreId: String = "",               // ID del padre (para usuarios HIJO)
     val activo: Boolean = true              // Si el usuario está activo
 ) {
     /**
@@ -31,7 +33,8 @@ data class Usuario(
             "tipo" to tipo.name,
             "pin" to pin,
             "email" to email,
-            "fechaCreacion" to fechaCreacion,
+            "photoUrl" to photoUrl,
+            "padreId" to padreId,
             "activo" to activo
         )
     }
@@ -51,7 +54,8 @@ data class Usuario(
                 },
                 pin = map["pin"] as? String ?: "",
                 email = map["email"] as? String ?: "",
-                fechaCreacion = map["fechaCreacion"] as? Long ?: System.currentTimeMillis(),
+                photoUrl = map["photoUrl"] as? String ?: "",
+                padreId = map["padreId"] as? String ?: "",
                 activo = map["activo"] as? Boolean ?: true
             )
         }

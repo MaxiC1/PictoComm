@@ -58,6 +58,34 @@ class SessionManager(context: Context) {
             apply()
         }
     }
+
+    /**
+     * Guarda el usuario activo con Long ID (versión sobrecargada)
+     */
+    fun guardarUsuarioActivo(userId: Long, nombre: String, tipo: String) {
+        guardarUsuarioActivo(userId.toString(), nombre, tipo)
+    }
+
+    /**
+     * Guarda el email del usuario
+     */
+    fun guardarEmail(email: String) {
+        prefs.edit().putString(KEY_USER_EMAIL, email).apply()
+    }
+
+    /**
+     * Guarda el Firebase UID del usuario
+     */
+    fun guardarFirebaseUid(uid: String) {
+        prefs.edit().putString("firebase_uid", uid).apply()
+    }
+
+    /**
+     * Obtiene el Firebase UID del usuario
+     */
+    fun obtenerFirebaseUid(): String? {
+        return prefs.getString("firebase_uid", null)
+    }
     
     /**
      * Obtiene el ID del usuario activo

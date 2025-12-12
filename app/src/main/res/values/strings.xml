@@ -77,4 +77,8 @@
 
     <!-- Contador de pendientes -->
     <string name="pictogramas_pendientes_badge">%1$d pendientes</string>
+
+    <!-- Firebase Google Sign-In -->
+    <!-- Web Client ID generado automáticamente por Firebase -->
+    <string name="default_web_client_id">611992244786-9q14hu1929bhsm05uugn6q2shhanehgc.apps.googleusercontent.com</string>
 </resources>

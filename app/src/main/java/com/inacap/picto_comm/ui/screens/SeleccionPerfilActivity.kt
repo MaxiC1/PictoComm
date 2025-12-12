@@ -5,12 +5,16 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
 import com.inacap.picto_comm.MainActivity
 import com.inacap.picto_comm.PictoCommApplication
 import com.inacap.picto_comm.R
@@ -20,14 +24,15 @@ import kotlinx.coroutines.launch
 
 /**
  * Pantalla de selección de perfil
- * 
+ *
  * Muestra lista de usuarios (PADRE + HIJOs)
  * - Al seleccionar HIJO -> Ir directo a MainActivity
- * - Al seleccionar PADRE -> Ir a PinActivity
+ * - Al seleccionar PADRE -> Ir a GoogleSignInActivity (autenticación con Google)
  */
 class SeleccionPerfilActivity : AppCompatActivity() {
 
     private lateinit var recyclerUsuarios: RecyclerView
+    private lateinit var fabAgregarHijo: FloatingActionButton
     private lateinit var usuariosAdapter: UsuariosAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,20 +40,51 @@ class SeleccionPerfilActivity : AppCompatActivity() {
         setContentView(R.layout.activity_seleccion_perfil)
 
         recyclerUsuarios = findViewById(R.id.recycler_usuarios)
+        fabAgregarHijo = findViewById(R.id.fab_agregar_hijo)
+
         recyclerUsuarios.layoutManager = LinearLayoutManager(this)
+
+        // FAB para agregar hijo (solo visible si el padre está autenticado)
+        fabAgregarHijo.setOnClickListener {
+            mostrarDialogoAgregarHijo()
+        }
 
         cargarUsuarios()
     }
 
     private fun cargarUsuarios() {
-        val repository = (application as PictoCommApplication).repository
+        val firebaseRepository = (application as PictoCommApplication).firebaseRepository
 
         lifecycleScope.launch {
-            val usuarios = repository.obtenerTodosUsuarios()
-            usuariosAdapter = UsuariosAdapter(usuarios) { usuario ->
-                onUsuarioSeleccionado(usuario)
+            try {
+                android.util.Log.d("SeleccionPerfil", "Cargando usuarios desde Firebase...")
+                val usuarios = firebaseRepository.obtenerTodosUsuarios()
+                android.util.Log.d("SeleccionPerfil", "Usuarios obtenidos: ${usuarios.size}")
+
+                if (usuarios.isEmpty()) {
+                    android.util.Log.w("SeleccionPerfil", "No hay usuarios en Firebase")
+                    android.widget.Toast.makeText(
+                        this@SeleccionPerfilActivity,
+                        "No hay usuarios registrados. Creando usuario de prueba...",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                    // Volver a GoogleSignInActivity para crear usuarios
+                    finish()
+                } else {
+                    usuariosAdapter = UsuariosAdapter(usuarios) { usuario ->
+                        onUsuarioSeleccionado(usuario)
+                    }
+                    recyclerUsuarios.adapter = usuariosAdapter
+                    android.util.Log.d("SeleccionPerfil", "Adapter configurado con ${usuarios.size} usuarios")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("SeleccionPerfil", "Error al cargar usuarios", e)
+                android.widget.Toast.makeText(
+                    this@SeleccionPerfilActivity,
+                    "Error al cargar usuarios: ${e.message}",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
             }
-            recyclerUsuarios.adapter = usuariosAdapter
         }
     }
 
@@ -62,11 +98,85 @@ class SeleccionPerfilActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         } else {
-            // PADRE: Ir a verificar PIN
-            val intent = Intent(this, PinActivity::class.java)
-            intent.putExtra("USUARIO_ID", usuario.id)
-            intent.putExtra("USUARIO_NOMBRE", usuario.nombre)
+            // PADRE: Ir a autenticar con Google
+            val intent = Intent(this, GoogleSignInActivity::class.java)
             startActivity(intent)
+        }
+    }
+
+    /**
+     * Muestra diálogo para agregar un usuario hijo
+     */
+    private fun mostrarDialogoAgregarHijo() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            android.widget.Toast.makeText(this,
+                "Debes iniciar sesión como administrador primero",
+                android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val input = EditText(this)
+        input.hint = "Nombre del usuario"
+        input.setPadding(50, 40, 50, 40)
+
+        AlertDialog.Builder(this)
+            .setTitle("Agregar Usuario Hijo")
+            .setMessage("Ingresa el nombre del usuario hijo:")
+            .setView(input)
+            .setPositiveButton("Agregar") { dialog, _ ->
+                val nombre = input.text.toString().trim()
+                if (nombre.isNotEmpty()) {
+                    agregarUsuarioHijo(nombre, currentUser.uid)
+                } else {
+                    android.widget.Toast.makeText(this,
+                        "El nombre no puede estar vacío",
+                        android.widget.Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    /**
+     * Agrega un usuario hijo a Firestore
+     */
+    private fun agregarUsuarioHijo(nombre: String, padreId: String) {
+        val firebaseRepository = (application as PictoCommApplication).firebaseRepository
+
+        lifecycleScope.launch {
+            try {
+                android.util.Log.d("SeleccionPerfil", "Creando usuario hijo: $nombre")
+                val resultado = firebaseRepository.crearUsuarioHijo(nombre, padreId)
+
+                resultado.onSuccess { hijoId ->
+                    android.util.Log.d("SeleccionPerfil", "✅ Usuario hijo creado: $hijoId")
+                    android.widget.Toast.makeText(
+                        this@SeleccionPerfilActivity,
+                        "Usuario hijo agregado: $nombre",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    // Recargar lista de usuarios
+                    cargarUsuarios()
+                }.onFailure { error ->
+                    android.util.Log.e("SeleccionPerfil", "❌ Error al crear hijo", error)
+                    android.widget.Toast.makeText(
+                        this@SeleccionPerfilActivity,
+                        "Error: ${error.message}",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("SeleccionPerfil", "❌ Error inesperado", e)
+                android.widget.Toast.makeText(
+                    this@SeleccionPerfilActivity,
+                    "Error inesperado: ${e.message}",
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
         }
     }
 

@@ -12,7 +12,20 @@
           "package_name": "com.inacap.picto_comm"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "611992244786-b9d6f5flpgkjb7gff47nm0hq778cddlt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.inacap.picto_comm",
+            "certificate_hash": "670acb9efa00e0647acc849817080dc151845daf"
+          }
+        },
+        {
+          "client_id": "611992244786-9q14hu1929bhsm05uugn6q2shhanehgc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyB3M-fbCnXTUG8qRlr7yybtp2ccx0GD99c"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "611992244786-9q14hu1929bhsm05uugn6q2shhanehgc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

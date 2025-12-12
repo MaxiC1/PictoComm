@@ -175,11 +175,11 @@ class CrearPictogramaActivity : AppCompatActivity() {
             fechaCreacion = System.currentTimeMillis()
         )
 
-        // Guardar en la base de datos
-        val repository = (application as PictoCommApplication).repository
+        // Guardar en Firebase Firestore
+        val firebaseRepository = (application as PictoCommApplication).firebaseRepository
         lifecycleScope.launch {
             try {
-                repository.crearPictograma(nuevoPictograma)
+                firebaseRepository.crearPictograma(nuevoPictograma)
 
                 if (aprobadoAutomaticamente) {
                     Toast.makeText(

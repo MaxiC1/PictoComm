@@ -2,7 +2,6 @@ package com.inacap.picto_comm.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import com.inacap.picto_comm.data.FuenteDatosMock
-import com.inacap.picto_comm.data.database.entities.PictogramaEntity
 import com.inacap.picto_comm.data.model.Categoria
 import com.inacap.picto_comm.data.model.PictogramaSimple
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,86 +10,40 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Estado de la interfaz de usuario para el DEMO
- * Contiene toda la informacion necesaria para mostrar la pantalla
+ * Estado de la interfaz de usuario
  */
 data class EstadoInterfazDemo(
-    // Lista de pictogramas que forman la oracion actual
     val oracionActual: List<PictogramaSimple> = emptyList(),
-
-    // Pictogramas disponibles para seleccionar (filtrados por categoria)
     val pictogramasDisponibles: List<PictogramaSimple> = emptyList(),
-
-    // Todos los pictogramas del sistema (sin filtrar)
     val todosPictogramas: List<PictogramaSimple> = emptyList(),
-
-    // Categoria actualmente seleccionada (null = todas)
     val categoriaSeleccionada: Categoria? = null
 ) {
-    /**
-     * Convierte la lista de pictogramas en un texto legible
-     * Ejemplo: [Yo, Quiero, Comer, Helado] -> "Yo Quiero Comer Helado"
-     */
     val textoOracion: String
         get() = oracionActual.joinToString(" ") { it.texto }
 
-    /**
-     * Indica si se puede reproducir la oracion con voz
-     * Requiere al menos un pictograma
-     */
     val puedeReproducir: Boolean
         get() = oracionActual.isNotEmpty()
 
-    /**
-     * Indica si se puede guardar la oracion
-     * Requiere al menos 2 pictogramas para formar una oracion valida
-     */
     val puedeGuardar: Boolean
         get() = oracionActual.size >= 2
 }
 
 /**
- * ViewModel principal del DEMO
- *
- * RESPONSABILIDADES:
- * - Gestiona el estado de la interfaz (que pictogramas se muestran)
- * - Maneja la construccion de oraciones (anadir/quitar pictogramas)
- * - Implementa el sistema predictivo (sugiere siguientes pictogramas)
- * - Filtra pictogramas por categoria
- * - Gestiona favoritos (temporal, no persiste)
- *
- * ARQUITECTURA:
- * - Usa StateFlow para emitir cambios de estado
- * - La UI observa uiState y se actualiza automaticamente
- * - No usa base de datos, todo en memoria (MockDataSource)
+ * ViewModel principal - Gestiona el estado de pictogramas y oraciones
  */
 class ViewModelDemo : ViewModel() {
 
-    // Estado interno mutable (privado)
-    // Solo este ViewModel puede modificarlo
     private val _estadoInterfaz = MutableStateFlow(EstadoInterfazDemo())
-
-    // Estado publico de solo lectura
-    // La UI puede observarlo pero no modificarlo
     val estadoInterfaz: StateFlow<EstadoInterfazDemo> = _estadoInterfaz.asStateFlow()
 
     init {
-        // Al crear el ViewModel, carga los datos iniciales
         cargarDatosIniciales()
     }
 
-    /**
-     * Carga los datos mock (falsos) para el demo
-     * En una app real, esto cargaria desde base de datos
-     */
     private fun cargarDatosIniciales() {
-        // Obtiene todos los pictogramas del sistema
         val todosPictogramas = FuenteDatosMock.obtenerTodosPictogramas()
-
-        // Obtiene los 20 mas usados para mostrar inicialmente
         val pictogramasIniciales = FuenteDatosMock.obtenerPictogramasMasUsados(20)
 
-        // Actualiza el estado de la interfaz
         _estadoInterfaz.update {
             it.copy(
                 todosPictogramas = todosPictogramas,
@@ -99,60 +52,23 @@ class ViewModelDemo : ViewModel() {
         }
     }
 
-    // ====================================================================
-    // SECCION: GESTION DE LA ORACION
-    // Funciones para construir y modificar la oracion actual
-    // ====================================================================
-
-    /**
-     * Anade un pictograma a la oracion que se esta construyendo
-     *
-     * FLUJO:
-     * 1. Anade el pictograma al final de la oracion
-     * 2. Actualiza el estado de la interfaz
-     * 3. Activa el sistema predictivo para sugerir siguiente pictograma
-     *
-     * EJEMPLO:
-     * - Oracion actual: [Yo, Quiero]
-     * - Usuario toca "Comer"
-     * - Nueva oracion: [Yo, Quiero, Comer]
-     * - Sistema sugiere pictogramas de categoria COSAS
-     */
     fun anadirPictogramaAOracion(pictograma: PictogramaSimple) {
-        // Actualiza el estado anadiendo el pictograma al final
         _estadoInterfaz.update { estadoActual ->
             estadoActual.copy(
                 oracionActual = estadoActual.oracionActual + pictograma
             )
         }
-
-        // Activa predicciones basadas en el pictograma anadido
         sugerirSiguientesPictogramas(pictograma)
     }
 
-    /**
-     * Elimina un pictograma especifico de la oracion
-     *
-     * @param indice Posicion del pictograma a eliminar (0 = primero)
-     *
-     * EJEMPLO:
-     * - Oracion: [Yo, Quiero, Comer, Helado]
-     * - eliminarPictogramaDeOracion(2)  // Elimina "Comer"
-     * - Nueva oracion: [Yo, Quiero, Helado]
-     */
     fun eliminarPictogramaDeOracion(indice: Int) {
         _estadoInterfaz.update { estadoActual ->
             estadoActual.copy(
-                // Filtra todos los pictogramas excepto el del indice especificado
                 oracionActual = estadoActual.oracionActual.filterIndexed { i, _ -> i != indice }
             )
         }
     }
 
-    /**
-     * Limpia completamente la oracion actual
-     * Vuelve a mostrar los pictogramas mas usados
-     */
     fun limpiarOracion() {
         _estadoInterfaz.update {
             it.copy(
@@ -160,49 +76,19 @@ class ViewModelDemo : ViewModel() {
                 categoriaSeleccionada = null
             )
         }
-        // Vuelve a cargar pictogramas desde los que ya están en memoria
-        // (no desde Mock, para mantener los datos de la BD)
         cargarPictogramasMasUsadosDesdeMemoria()
     }
 
-    // ====================================================================
-    // SECCION: NAVEGACION POR CATEGORIAS
-    // Funciones para filtrar pictogramas segun categoria
-    // ====================================================================
-
-    /**
-     * Filtra los pictogramas por categoria
-     *
-     * @param categoria Categoria a filtrar (null = mostrar todos)
-     *
-     * CATEGORIAS DISPONIBLES:
-     * - PERSONAS: Yo, Tu, Mama, Papa, etc.
-     * - ACCIONES: Quiero, Tengo, Comer, Jugar, etc.
-     * - COSAS: Helado, Agua, Comida, etc.
-     * - CUALIDADES: Hambre, Sed, Feliz, Triste, etc.
-     * - LUGARES: Casa, Escuela, Parque, etc.
-     * - TIEMPO: Ahora, Despues, Manana, etc.
-     *
-     * FLUJO:
-     * 1. Si categoria != null, filtra solo esa categoria
-     * 2. Si categoria == null, muestra los mas usados
-     * 3. Actualiza la interfaz con los pictogramas filtrados
-     */
     fun seleccionarCategoria(categoria: Categoria?) {
         val todosPictogramas = _estadoInterfaz.value.todosPictogramas
 
-        // Obtiene los pictogramas segun la categoria
         val pictogramas = if (todosPictogramas.isNotEmpty()) {
-            // Usar los pictogramas de la base de datos (que ya están en memoria)
             if (categoria != null) {
-                // Filtra por categoria especifica desde memoria
                 todosPictogramas.filter { it.categoria == categoria }
             } else {
-                // Muestra los primeros 20 desde memoria
                 todosPictogramas.take(20)
             }
         } else {
-            // Si no hay pictogramas en memoria, usar Mock (fallback)
             if (categoria != null) {
                 FuenteDatosMock.obtenerPictogramasPorCategoria(categoria)
             } else {
@@ -210,7 +96,6 @@ class ViewModelDemo : ViewModel() {
             }
         }
 
-        // Actualiza el estado
         _estadoInterfaz.update {
             it.copy(
                 categoriaSeleccionada = categoria,
@@ -219,10 +104,6 @@ class ViewModelDemo : ViewModel() {
         }
     }
 
-    /**
-     * Carga los pictogramas mas frecuentemente usados
-     * Usado cuando se limpia la oracion o se inicia la app
-     */
     private fun cargarPictogramasMasUsados() {
         val pictogramas = FuenteDatosMock.obtenerPictogramasMasUsados(20)
         _estadoInterfaz.update {
@@ -230,45 +111,17 @@ class ViewModelDemo : ViewModel() {
         }
     }
 
-    /**
-     * Carga los pictogramas desde los que ya están en memoria (todosPictogramas)
-     * Usado al limpiar la oración para no perder los datos de la BD
-     */
     private fun cargarPictogramasMasUsadosDesdeMemoria() {
         val todosPictogramas = _estadoInterfaz.value.todosPictogramas
         if (todosPictogramas.isNotEmpty()) {
-            // Usa los pictogramas que ya están cargados desde la BD
             _estadoInterfaz.update {
                 it.copy(pictogramasDisponibles = todosPictogramas.take(20))
             }
         } else {
-            // Si no hay pictogramas en memoria, cargar desde Mock
             cargarPictogramasMasUsados()
         }
     }
 
-    // ====================================================================
-    // SECCION: SISTEMA PREDICTIVO MEJORADO
-    // Sugiere automaticamente la siguiente categoria segun contexto
-    // ====================================================================
-
-    /**
-     * Sistema de prediccion inteligente MEJORADO
-     * Sugiere que categoria mostrar despues de seleccionar un pictograma
-     *
-     * LOGICA DE PREDICCION AVANZADA:
-     *
-     * 1. CONTEXTUAL: Analiza los ultimos 2 pictogramas para entender mejor
-     * 2. ESPECIFICA POR PALABRA: Ciertas acciones sugieren categorias especificas
-     *    - "Voy" / "Ir al baño" -> LUGARES
-     *    - "Comer" / "Beber" -> COSAS (comida/bebida)
-     *    - "Jugar" -> COSAS (juguetes)
-     *    - "Dormir" -> LUGARES (habitacion)
-     * 3. ORDEN GRAMATICAL: Sigue estructura natural del español
-     *    - PERSONA + ACCION + OBJETO/LUGAR
-     *    - PERSONA + CUALIDAD + OBJETO
-     * 4. COMPLETA ORACIONES: Sugiere TIEMPO cuando la oracion esta completa
-     */
     private fun sugerirSiguientesPictogramas(ultimoPictograma: PictogramaSimple) {
         val oracionActual = _estadoInterfaz.value.oracionActual
         val tamanioOracion = oracionActual.size
@@ -449,50 +302,43 @@ class ViewModelDemo : ViewModel() {
 
     // ====================================================================
     // SECCION: GUARDAR ORACION
-    // En el demo solo valida, en version completa guardaria en BD
+    // Guarda la oración en Firebase
     // ====================================================================
 
     /**
-     * Simula el guardado de una oracion
+     * Guarda la oración actual en Firebase
      *
-     * En el DEMO:
-     * - Solo retorna true/false si se puede guardar
-     * - NO guarda realmente (no hay base de datos)
-     *
-     * En la VERSION COMPLETA:
-     * - Guardaria en Room Database
-     * - Incrementaria contador de frecuencia
-     * - Permitiria acceso rapido desde historial
-     *
-     * @return true si la oracion es valida para guardar
+     * @return Pair<Boolean, String> - (éxito, IDs de pictogramas en formato String)
      */
-    fun guardarOracion(): Boolean {
-        return _estadoInterfaz.value.puedeGuardar
+    fun guardarOracion(): Pair<Boolean, String> {
+        val estado = _estadoInterfaz.value
+        if (!estado.puedeGuardar) {
+            return Pair(false, "")
+        }
+
+        // Obtener IDs de los pictogramas de la oración
+        val pictogramaIds = estado.oracionActual.map { it.id }.filter { it.isNotEmpty() }
+        val textoCompleto = estado.textoOracion
+
+        return Pair(true, pictogramaIds.joinToString(",") + "|" + textoCompleto)
     }
 
     // ====================================================================
     // SECCION: CARGA DESDE BASE DE DATOS
-    // Funciones para cargar pictogramas desde Room Database
+    // Funciones para cargar pictogramas desde Firebase
     // ====================================================================
 
     /**
-     * Carga pictogramas desde la base de datos Room
-     * Convierte PictogramaEntity a PictogramaSimple
+     * Carga pictogramas desde Firebase Firestore
      *
-     * @param pictogramasEntity Lista de pictogramas desde la BD
+     * @param pictogramas Lista de pictogramas desde Firebase
      */
-    fun cargarPictogramasDesdeBaseDatos(pictogramasEntity: List<PictogramaEntity>) {
-        // Convertir PictogramaEntity a PictogramaSimple usando el método toModel()
-        // que mapea correctamente todos los campos incluyendo aprobado, creadoPor, etc.
-        val pictogramasSimple = pictogramasEntity.map { entity ->
-            entity.toModel()
-        }
-
+    fun cargarPictogramasDesdeBaseDatos(pictogramas: List<PictogramaSimple>) {
         // Actualizar estado con todos los pictogramas
         _estadoInterfaz.update {
             it.copy(
-                todosPictogramas = pictogramasSimple,
-                pictogramasDisponibles = pictogramasSimple.take(20) // Mostrar primeros 20
+                todosPictogramas = pictogramas,
+                pictogramasDisponibles = pictogramas.take(20) // Mostrar primeros 20
             )
         }
     }

@@ -1,9 +1,13 @@
 package com.inacap.picto_comm.ui.screens
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.Spinner
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -13,30 +17,31 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.inacap.picto_comm.PictoCommApplication
 import com.inacap.picto_comm.R
+import com.inacap.picto_comm.data.model.Categoria
 import com.inacap.picto_comm.data.model.PictogramaSimple
 import com.inacap.picto_comm.data.model.TipoUsuario
-import com.inacap.picto_comm.ui.adapters.PictogramaPendienteAdapter
+import com.inacap.picto_comm.ui.adapters.PictogramaGestionAdapter
 import com.inacap.picto_comm.ui.utils.PinHelper
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 /**
- * Actividad para gestionar pictogramas pendientes de aprobación
- * Solo accesible por usuarios PADRE
+ * Actividad para gestionar todos los pictogramas (editar/eliminar)
+ * Solo accesible por usuarios PADRE con verificación de PIN
  */
-class GestionarPictogramasActivity : AppCompatActivity() {
+class GestionarTodosPictogramasActivity : AppCompatActivity() {
 
     private lateinit var toolbar: MaterialToolbar
-    private lateinit var recyclerPendientes: RecyclerView
+    private lateinit var recyclerTodosPictogramas: RecyclerView
     private lateinit var layoutEmptyState: LinearLayout
     private lateinit var progressBar: ProgressBar
 
-    private lateinit var adapter: PictogramaPendienteAdapter
+    private lateinit var adapter: PictogramaGestionAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_gestionar_pictogramas)
+        setContentView(R.layout.activity_gestionar_todos_pictogramas)
 
         // Verificar que sea usuario PADRE
         val sessionManager = (application as PictoCommApplication).sessionManager
@@ -54,6 +59,37 @@ class GestionarPictogramasActivity : AppCompatActivity() {
         verificarPinYCargarDatos()
     }
 
+    private fun inicializarVistas() {
+        toolbar = findViewById(R.id.toolbar)
+        recyclerTodosPictogramas = findViewById(R.id.recycler_todos_pictogramas)
+        layoutEmptyState = findViewById(R.id.layout_empty_state)
+        progressBar = findViewById(R.id.progress_bar)
+    }
+
+    private fun configurarToolbar() {
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        toolbar.setNavigationOnClickListener {
+            finish()
+        }
+    }
+
+    private fun configurarRecyclerView() {
+        adapter = PictogramaGestionAdapter(
+            onEditar = { pictograma ->
+                mostrarDialogoEditar(pictograma)
+            },
+            onEliminar = { pictograma ->
+                mostrarDialogoConfirmacionEliminar(pictograma)
+            }
+        )
+
+        recyclerTodosPictogramas.apply {
+            layoutManager = LinearLayoutManager(this@GestionarTodosPictogramasActivity)
+            adapter = this@GestionarTodosPictogramasActivity.adapter
+        }
+    }
+
     /**
      * Verifica el PIN del padre antes de mostrar los datos
      */
@@ -62,10 +98,9 @@ class GestionarPictogramasActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             try {
-                // Obtener el PIN del padre desde Firestore
                 val padreId = firebaseRepository.auth.currentUser?.uid
                 if (padreId == null) {
-                    Toast.makeText(this@GestionarPictogramasActivity,
+                    Toast.makeText(this@GestionarTodosPictogramasActivity,
                         "Error: Usuario no autenticado", Toast.LENGTH_SHORT).show()
                     finish()
                     return@launch
@@ -78,18 +113,17 @@ class GestionarPictogramasActivity : AppCompatActivity() {
                     // No tiene PIN configurado, ofrecer configurarlo o continuar
                     mostrarDialogoConfigurarPin(padreId)
                 } else {
-                    // Verificar PIN
-                    val pinVerificado = PinHelper.verificarPin(this@GestionarPictogramasActivity, pinCorrecto)
+                    val pinVerificado = PinHelper.verificarPin(this@GestionarTodosPictogramasActivity, pinCorrecto)
                     if (pinVerificado) {
-                        cargarPictogramasPendientes()
+                        cargarTodosPictogramas()
                     } else {
-                        Toast.makeText(this@GestionarPictogramasActivity,
+                        Toast.makeText(this@GestionarTodosPictogramasActivity,
                             "Acceso denegado", Toast.LENGTH_SHORT).show()
                         finish()
                     }
                 }
             } catch (e: Exception) {
-                Toast.makeText(this@GestionarPictogramasActivity,
+                Toast.makeText(this@GestionarTodosPictogramasActivity,
                     "Error al verificar PIN: ${e.message}", Toast.LENGTH_SHORT).show()
                 finish()
             }
@@ -100,7 +134,7 @@ class GestionarPictogramasActivity : AppCompatActivity() {
      * Muestra un diálogo para configurar el PIN si no existe
      */
     private fun mostrarDialogoConfigurarPin(padreId: String) {
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        AlertDialog.Builder(this)
             .setTitle("PIN no configurado")
             .setMessage("No tienes un PIN configurado. ¿Deseas configurar uno ahora para mayor seguridad?")
             .setPositiveButton("Configurar PIN") { dialog, _ ->
@@ -111,10 +145,10 @@ class GestionarPictogramasActivity : AppCompatActivity() {
             }
             .setNegativeButton("Continuar sin PIN") { dialog, _ ->
                 dialog.dismiss()
-                Toast.makeText(this@GestionarPictogramasActivity,
+                Toast.makeText(this@GestionarTodosPictogramasActivity,
                     "Continuando sin PIN. Puedes configurarlo más tarde.",
                     Toast.LENGTH_SHORT).show()
-                cargarPictogramasPendientes()
+                cargarTodosPictogramas()
             }
             .setCancelable(false)
             .show()
@@ -137,7 +171,7 @@ class GestionarPictogramasActivity : AppCompatActivity() {
 
                 Toast.makeText(this,
                     "PIN configurado exitosamente", Toast.LENGTH_SHORT).show()
-                cargarPictogramasPendientes()
+                cargarTodosPictogramas()
             } catch (e: Exception) {
                 Toast.makeText(this,
                     "Error al guardar PIN: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -150,73 +184,36 @@ class GestionarPictogramasActivity : AppCompatActivity() {
         }
     }
 
-    private fun inicializarVistas() {
-        toolbar = findViewById(R.id.toolbar)
-        recyclerPendientes = findViewById(R.id.recycler_pendientes)
-        layoutEmptyState = findViewById(R.id.layout_empty_state)
-        progressBar = findViewById(R.id.progress_bar)
-    }
-
-    private fun configurarToolbar() {
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationOnClickListener {
-            finish()
-        }
-    }
-
-    private fun configurarRecyclerView() {
-        adapter = PictogramaPendienteAdapter(
-            onAprobar = { pictograma ->
-                aprobarPictograma(pictograma)
-            },
-            onRechazar = { pictograma ->
-                mostrarDialogoConfirmacionRechazo(pictograma)
-            },
-            obtenerNombreUsuario = { usuarioId ->
-                obtenerNombreUsuarioPorId(usuarioId)
-            }
-        )
-
-        recyclerPendientes.apply {
-            layoutManager = LinearLayoutManager(this@GestionarPictogramasActivity)
-            adapter = this@GestionarPictogramasActivity.adapter
-        }
-    }
-
-    private fun cargarPictogramasPendientes() {
+    private fun cargarTodosPictogramas() {
         val firebaseRepository = (application as PictoCommApplication).firebaseRepository
 
-        // Mostrar carga inicial
         progressBar.visibility = View.VISIBLE
-        recyclerPendientes.visibility = View.GONE
+        recyclerTodosPictogramas.visibility = View.GONE
         layoutEmptyState.visibility = View.GONE
 
         lifecycleScope.launch {
             var primeraVez = true
             try {
-                firebaseRepository.obtenerPictogramasPendientes().collect { pictogramas ->
-                    // Solo ocultar progress bar la primera vez
+                firebaseRepository.obtenerTodosPictogramas().collect { pictogramas ->
                     if (primeraVez) {
                         progressBar.visibility = View.GONE
                         primeraVez = false
                     }
 
                     if (pictogramas.isEmpty()) {
-                        recyclerPendientes.visibility = View.GONE
+                        recyclerTodosPictogramas.visibility = View.GONE
                         layoutEmptyState.visibility = View.VISIBLE
                     } else {
-                        recyclerPendientes.visibility = View.VISIBLE
+                        recyclerTodosPictogramas.visibility = View.VISIBLE
                         layoutEmptyState.visibility = View.GONE
                         adapter.submitList(pictogramas)
                     }
                 }
             } catch (e: Exception) {
-                // Manejar cancelación sin mostrar error
                 if (e !is kotlinx.coroutines.CancellationException) {
                     progressBar.visibility = View.GONE
                     Toast.makeText(
-                        this@GestionarPictogramasActivity,
+                        this@GestionarTodosPictogramasActivity,
                         "Error al cargar pictogramas: ${e.message}",
                         Toast.LENGTH_SHORT
                     ).show()
@@ -225,75 +222,101 @@ class GestionarPictogramasActivity : AppCompatActivity() {
         }
     }
 
-    private fun aprobarPictograma(pictograma: PictogramaSimple) {
-        val firebaseRepository = (application as PictoCommApplication).firebaseRepository
+    private fun mostrarDialogoEditar(pictograma: PictogramaSimple) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_editar_pictograma, null)
 
-        lifecycleScope.launch {
-            try {
-                firebaseRepository.aprobarPictograma(pictograma.id)
-                Toast.makeText(
-                    this@GestionarPictogramasActivity,
-                    getString(R.string.pictograma_aprobado),
-                    Toast.LENGTH_SHORT
-                ).show()
-            } catch (e: Exception) {
-                Toast.makeText(
-                    this@GestionarPictogramasActivity,
-                    "Error al aprobar pictograma: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
+        val etTexto = dialogView.findViewById<EditText>(R.id.et_texto_pictograma)
+        val spinnerCategoria = dialogView.findViewById<Spinner>(R.id.spinner_categoria)
 
-    private fun rechazarPictograma(pictograma: PictogramaSimple) {
-        val firebaseRepository = (application as PictoCommApplication).firebaseRepository
+        // Configurar valores actuales
+        etTexto.setText(pictograma.texto)
 
-        lifecycleScope.launch {
-            try {
-                firebaseRepository.rechazarPictograma(pictograma.id)
-                Toast.makeText(
-                    this@GestionarPictogramasActivity,
-                    getString(R.string.pictograma_rechazado),
-                    Toast.LENGTH_SHORT
-                ).show()
-            } catch (e: Exception) {
-                Toast.makeText(
-                    this@GestionarPictogramasActivity,
-                    "Error al rechazar pictograma: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
-    }
+        // Configurar spinner de categorías
+        val categorias = Categoria.values()
+        val categoriasNombres = categorias.map { it.nombreMostrar }
+        val adapterSpinner = ArrayAdapter(this, android.R.layout.simple_spinner_item, categoriasNombres)
+        adapterSpinner.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerCategoria.adapter = adapterSpinner
+        spinnerCategoria.setSelection(categorias.indexOf(pictograma.categoria))
 
-    private fun mostrarDialogoConfirmacionRechazo(pictograma: PictogramaSimple) {
         AlertDialog.Builder(this)
-            .setTitle(getString(R.string.rechazar))
-            .setMessage(getString(R.string.confirmar_rechazo))
-            .setPositiveButton(getString(R.string.confirmar)) { dialog, _ ->
-                rechazarPictograma(pictograma)
+            .setTitle("Editar Pictograma")
+            .setView(dialogView)
+            .setPositiveButton("Guardar") { dialog, _ ->
+                val nuevoTexto = etTexto.text.toString()
+                val nuevaCategoria = categorias[spinnerCategoria.selectedItemPosition]
+
+                if (nuevoTexto.isBlank()) {
+                    Toast.makeText(this, "El texto no puede estar vacío", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                editarPictograma(pictograma, nuevoTexto, nuevaCategoria)
                 dialog.dismiss()
             }
-            .setNegativeButton(getString(R.string.cancelar)) { dialog, _ ->
+            .setNegativeButton("Cancelar") { dialog, _ ->
                 dialog.dismiss()
             }
             .show()
     }
 
-    private fun obtenerNombreUsuarioPorId(usuarioId: String): String {
+    private fun editarPictograma(pictograma: PictogramaSimple, nuevoTexto: String, nuevaCategoria: Categoria) {
         val firebaseRepository = (application as PictoCommApplication).firebaseRepository
-        var nombre = "Usuario"
 
         lifecycleScope.launch {
             try {
-                val usuario = firebaseRepository.obtenerUsuario(usuarioId)
-                nombre = usuario?.nombre ?: "Usuario"
+                val pictogramaActualizado = pictograma.copy(
+                    texto = nuevoTexto,
+                    categoria = nuevaCategoria
+                )
+                firebaseRepository.actualizarPictograma(pictogramaActualizado)
+                Toast.makeText(
+                    this@GestionarTodosPictogramasActivity,
+                    "Pictograma actualizado",
+                    Toast.LENGTH_SHORT
+                ).show()
             } catch (e: Exception) {
-                nombre = "Usuario"
+                Toast.makeText(
+                    this@GestionarTodosPictogramasActivity,
+                    "Error al actualizar pictograma: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
+    }
 
-        return nombre
+    private fun mostrarDialogoConfirmacionEliminar(pictograma: PictogramaSimple) {
+        AlertDialog.Builder(this)
+            .setTitle("Eliminar Pictograma")
+            .setMessage("¿Estás seguro de que deseas eliminar \"${pictograma.texto}\"?\n\nEsta acción no se puede deshacer.")
+            .setPositiveButton("Eliminar") { dialog, _ ->
+                eliminarPictograma(pictograma)
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+
+    private fun eliminarPictograma(pictograma: PictogramaSimple) {
+        val firebaseRepository = (application as PictoCommApplication).firebaseRepository
+
+        lifecycleScope.launch {
+            try {
+                firebaseRepository.eliminarPictograma(pictograma.id)
+                Toast.makeText(
+                    this@GestionarTodosPictogramasActivity,
+                    "Pictograma eliminado",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@GestionarTodosPictogramasActivity,
+                    "Error al eliminar pictograma: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 }

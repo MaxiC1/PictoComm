@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permisos necesarios para Firebase y Google Sign-In -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:name=".PictoCommApplication"
         android:allowBackup="true"
@@ -36,11 +40,11 @@
             android:exported="false"
             android:label="Seleccionar Perfil" />
 
-        <!-- PinActivity - Verificación de PIN -->
+        <!-- GoogleSignInActivity - Autenticación con Google -->
         <activity
-            android:name=".ui.screens.PinActivity"
+            android:name=".ui.screens.GoogleSignInActivity"
             android:exported="false"
-            android:label="Verificar PIN" />
+            android:label="Iniciar Sesión" />
 
         <!-- MainActivity - Pantalla principal -->
         <activity
@@ -60,6 +64,13 @@
             android:name=".ui.screens.GestionarPictogramasActivity"
             android:exported="false"
             android:label="@string/gestionar_pictogramas"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- GestionarTodosPictogramasActivity - Editar/Eliminar todos los pictogramas (solo PADRE) -->
+        <activity
+            android:name=".ui.screens.GestionarTodosPictogramasActivity"
+            android:exported="false"
+            android:label="Gestionar Pictogramas"
             android:parentActivityName=".MainActivity" />
 
     </application>
