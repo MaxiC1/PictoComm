@@ -1,6 +1,7 @@
 package com.inacap.picto_comm
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
 import com.inacap.picto_comm.data.repository.FirebaseRepository
 import com.inacap.picto_comm.data.repository.SessionManager
 
@@ -30,6 +31,28 @@ class PictoCommApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        // Aquí puedes agregar inicializaciones adicionales si es necesario
+
+        // Aplicar tema guardado
+        aplicarTemaGuardado()
+    }
+
+    /**
+     * Aplica el tema guardado en las preferencias
+     */
+    private fun aplicarTemaGuardado() {
+        when (sessionManager.obtenerModoOscuro()) {
+            null -> {
+                // Seguir el sistema (por defecto)
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+            }
+            false -> {
+                // Modo claro
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            }
+            true -> {
+                // Modo oscuro
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            }
+        }
     }
 }

@@ -81,6 +81,18 @@ dependencies {
     // Gson para serialización JSON (Firebase lo usa también)
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // CameraX para captura de imágenes
+    implementation("androidx.camera:camera-core:1.3.1")
+    implementation("androidx.camera:camera-camera2:1.3.1")
+    implementation("androidx.camera:camera-lifecycle:1.3.1")
+    implementation("androidx.camera:camera-view:1.3.1")
+
+    // Guava (requerido por CameraX para ListenableFuture)
+    implementation("com.google.guava:guava:31.1-android")
+
+    // ExifInterface para leer orientación de imágenes
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

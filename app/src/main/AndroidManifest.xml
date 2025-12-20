@@ -6,6 +6,14 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Permisos para la cámara -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- Permiso para modificar el brillo de la pantalla -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
+
     <application
         android:name=".PictoCommApplication"
         android:allowBackup="true"
@@ -71,6 +79,13 @@
             android:name=".ui.screens.GestionarTodosPictogramasActivity"
             android:exported="false"
             android:label="Gestionar Pictogramas"
+            android:parentActivityName=".MainActivity" />
+
+        <!-- SettingsActivity - Configuración de la aplicación -->
+        <activity
+            android:name=".ui.screens.SettingsActivity"
+            android:exported="false"
+            android:label="Configuración"
             android:parentActivityName=".MainActivity" />
 
     </application>

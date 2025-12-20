@@ -30,6 +30,8 @@ class SessionManager(context: Context) {
         private const val KEY_USER_EMAIL = "user_email"
         private const val KEY_IS_LOGGED_IN = "is_logged_in"
         private const val KEY_FIRST_TIME = "first_time"
+        private const val KEY_DARK_MODE = "dark_mode"
+        private const val KEY_AUTO_BRIGHTNESS = "auto_brightness"
     }
     
     /**
@@ -197,7 +199,49 @@ class SessionManager(context: Context) {
     fun marcarNoEsPrimeraVez() {
         prefs.edit().putBoolean(KEY_FIRST_TIME, false).apply()
     }
-    
+
+    /**
+     * Guarda la preferencia de modo oscuro
+     * @param enabled true para modo oscuro, false para modo claro, null para seguir el sistema
+     */
+    fun guardarModoOscuro(enabled: Boolean?) {
+        prefs.edit().apply {
+            if (enabled == null) {
+                remove(KEY_DARK_MODE)
+            } else {
+                putBoolean(KEY_DARK_MODE, enabled)
+            }
+            apply()
+        }
+    }
+
+    /**
+     * Obtiene la preferencia de modo oscuro
+     * @return true para modo oscuro, false para modo claro, null para seguir el sistema
+     */
+    fun obtenerModoOscuro(): Boolean? {
+        return if (prefs.contains(KEY_DARK_MODE)) {
+            prefs.getBoolean(KEY_DARK_MODE, false)
+        } else {
+            null // Seguir el sistema por defecto
+        }
+    }
+
+    /**
+     * Guarda la preferencia de brillo automático
+     */
+    fun guardarBrilloAutomatico(enabled: Boolean) {
+        prefs.edit().putBoolean(KEY_AUTO_BRIGHTNESS, enabled).apply()
+    }
+
+    /**
+     * Obtiene la preferencia de brillo automático
+     * @return true si está habilitado (por defecto), false si está deshabilitado
+     */
+    fun obtenerBrilloAutomatico(): Boolean {
+        return prefs.getBoolean(KEY_AUTO_BRIGHTNESS, true)
+    }
+
     /**
      * Limpia todos los datos de la sesión
      */

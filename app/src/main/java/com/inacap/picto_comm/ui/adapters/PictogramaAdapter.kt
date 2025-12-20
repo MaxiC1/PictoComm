@@ -1,6 +1,9 @@
 package com.inacap.picto_comm.ui.adapters
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,6 +16,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.inacap.picto_comm.R
 import com.inacap.picto_comm.data.model.PictogramaSimple
+import com.inacap.picto_comm.data.model.TipoImagen
 import com.inacap.picto_comm.ui.utils.IconoHelper
 
 /**
@@ -51,10 +55,6 @@ class PictogramaAdapter(
             // Texto del pictograma
             tvTexto.text = pictograma.texto
 
-            // Icono del pictograma
-            val iconoResId = IconoHelper.obtenerIconoParaPictograma(pictograma.recursoImagen)
-            ivIcono.setImageResource(iconoResId)
-
             // Color de categoría
             val colorCategoria = Color.parseColor(String.format("#%08X", pictograma.categoria.color))
             val colorCategoriaLight = Color.parseColor(
@@ -64,8 +64,29 @@ class PictogramaAdapter(
             // Aplicar colores
             cardPictograma.setCardBackgroundColor(colorCategoriaLight)
             frameIcono.setBackgroundColor(colorCategoria)
-            // Removido setColorFilter para que los iconos sean visibles
-            // ivIcono.setColorFilter(colorCategoria)
+
+            // Cargar imagen según el tipo
+            if (pictograma.tipoImagen == TipoImagen.FOTO && pictograma.urlImagen.isNotEmpty()) {
+                // Imagen personalizada desde Base64
+                try {
+                    val imageBytes = Base64.decode(pictograma.urlImagen, Base64.DEFAULT)
+                    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                    ivIcono.setImageBitmap(bitmap)
+                    ivIcono.scaleType = ImageView.ScaleType.CENTER_CROP
+                    ivIcono.clearColorFilter() // NO aplicar filtro a fotos
+                } catch (e: Exception) {
+                    android.util.Log.e("PictogramaAdapter", "Error al decodificar imagen Base64", e)
+                    // Fallback: usar icono por defecto
+                    val iconoResId = IconoHelper.obtenerIconoParaPictograma(pictograma.recursoImagen)
+                    ivIcono.setImageResource(iconoResId)
+                    ivIcono.scaleType = ImageView.ScaleType.CENTER
+                }
+            } else {
+                // Icono del sistema
+                val iconoResId = IconoHelper.obtenerIconoParaPictograma(pictograma.recursoImagen)
+                ivIcono.setImageResource(iconoResId)
+                ivIcono.scaleType = ImageView.ScaleType.CENTER
+            }
 
             // Mostrar/ocultar indicador de favorito
             ivFavorito.visibility = if (pictograma.esFavorito) View.VISIBLE else View.GONE

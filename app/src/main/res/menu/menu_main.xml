@@ -29,6 +29,12 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_configuracion"
+        android:title="Configuración"
+        android:icon="@android:drawable/ic_menu_preferences"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_info"
         android:title="@string/menu_info"
         android:icon="@drawable/ic_info"

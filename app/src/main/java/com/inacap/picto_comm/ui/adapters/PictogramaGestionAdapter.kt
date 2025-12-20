@@ -1,5 +1,7 @@
 package com.inacap.picto_comm.ui.adapters
 
+import android.graphics.BitmapFactory
+import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import com.inacap.picto_comm.R
 import com.inacap.picto_comm.data.model.PictogramaSimple
+import com.inacap.picto_comm.data.model.TipoImagen
 import com.inacap.picto_comm.ui.utils.IconoHelper
 
 /**
@@ -61,9 +64,27 @@ class PictogramaGestionAdapter(
                     itemView.context.getColor(android.R.color.holo_orange_dark)
             )
 
-            // Icono
-            val iconoRes = IconoHelper.obtenerIconoParaPictograma(pictograma.recursoImagen)
-            ivIcono.setImageResource(iconoRes)
+            // Cargar imagen según el tipo
+            if (pictograma.tipoImagen == TipoImagen.FOTO && pictograma.urlImagen.isNotEmpty()) {
+                // Imagen personalizada desde Base64
+                try {
+                    val imageBytes = Base64.decode(pictograma.urlImagen, Base64.DEFAULT)
+                    val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                    ivIcono.setImageBitmap(bitmap)
+                    ivIcono.scaleType = ImageView.ScaleType.CENTER_CROP
+                } catch (e: Exception) {
+                    android.util.Log.e("PictogramaGestionAdapter", "Error al decodificar imagen Base64", e)
+                    // Fallback: usar icono por defecto
+                    val iconoRes = IconoHelper.obtenerIconoParaPictograma(pictograma.recursoImagen)
+                    ivIcono.setImageResource(iconoRes)
+                    ivIcono.scaleType = ImageView.ScaleType.CENTER
+                }
+            } else {
+                // Icono del sistema
+                val iconoRes = IconoHelper.obtenerIconoParaPictograma(pictograma.recursoImagen)
+                ivIcono.setImageResource(iconoRes)
+                ivIcono.scaleType = ImageView.ScaleType.CENTER
+            }
 
             // Color de fondo según categoría
             val colorCategoria = pictograma.categoria.color

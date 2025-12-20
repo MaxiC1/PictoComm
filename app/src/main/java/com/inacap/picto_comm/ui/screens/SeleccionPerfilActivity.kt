@@ -92,11 +92,38 @@ class SeleccionPerfilActivity : AppCompatActivity() {
         val sessionManager = (application as PictoCommApplication).sessionManager
 
         if (usuario.tipo == TipoUsuario.HIJO) {
-            // HIJO: Ir directo a MainActivity
-            sessionManager.guardarUsuarioActivo(usuario.id, usuario.nombre, usuario.tipo.name)
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-            finish()
+            // HIJO: Autenticar anónimamente en Firebase y luego ir a MainActivity
+            val auth = FirebaseAuth.getInstance()
+
+            // Si ya hay un usuario autenticado, usarlo; si no, autenticar anónimamente
+            if (auth.currentUser == null) {
+                auth.signInAnonymously()
+                    .addOnSuccessListener {
+                        android.util.Log.d("SeleccionPerfil", "Usuario HIJO autenticado anónimamente")
+                        sessionManager.guardarUsuarioActivo(usuario.id, usuario.nombre, usuario.tipo.name)
+                        sessionManager.guardarFirebaseUid(it.user?.uid ?: "")
+
+                        val intent = Intent(this, MainActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                    }
+                    .addOnFailureListener { e ->
+                        android.util.Log.e("SeleccionPerfil", "Error al autenticar anónimamente", e)
+                        android.widget.Toast.makeText(
+                            this,
+                            "Error al iniciar sesión: ${e.message}",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    }
+            } else {
+                // Ya hay un usuario autenticado
+                sessionManager.guardarUsuarioActivo(usuario.id, usuario.nombre, usuario.tipo.name)
+                sessionManager.guardarFirebaseUid(auth.currentUser?.uid ?: "")
+
+                val intent = Intent(this, MainActivity::class.java)
+                startActivity(intent)
+                finish()
+            }
         } else {
             // PADRE: Ir a autenticar con Google
             val intent = Intent(this, GoogleSignInActivity::class.java)

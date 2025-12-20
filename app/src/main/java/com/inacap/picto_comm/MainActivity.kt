@@ -1,11 +1,17 @@
 package com.inacap.picto_comm
 
 import android.content.Intent
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.WindowManager
 import android.widget.ImageButton
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -29,9 +35,12 @@ import com.inacap.picto_comm.ui.screens.CrearPictogramaActivity
 import com.inacap.picto_comm.ui.screens.GestionarPictogramasActivity
 import com.inacap.picto_comm.ui.screens.GestionarTodosPictogramasActivity
 import com.inacap.picto_comm.ui.screens.SeleccionPerfilActivity
+import com.inacap.picto_comm.ui.screens.SettingsActivity
 import com.inacap.picto_comm.ui.viewmodel.ViewModelDemo
 import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Activity principal de PictoComm
@@ -44,6 +53,27 @@ class MainActivity : AppCompatActivity() {
 
     // Text-to-Speech
     private var tts: TextToSpeech? = null
+
+    // Sensor de luz para ajuste automático de brillo
+    private lateinit var sensorManager: SensorManager
+    private var lightSensor: Sensor? = null
+    private var brightnessAdjustmentEnabled = true
+
+    private val lightSensorListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            event?.let {
+                if (brightnessAdjustmentEnabled && it.sensor.type == Sensor.TYPE_LIGHT) {
+                    val lux = it.values[0]
+                    ajustarBrilloPantalla(lux)
+                    actualizarIndicadorSensor(lux)
+                }
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            // No se necesita implementación
+        }
+    }
 
     // Views - Toolbar
     private lateinit var toolbar: MaterialToolbar
@@ -61,6 +91,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var tvEmptyState: TextView
     private lateinit var fabCrearPictograma: FloatingActionButton
+    private lateinit var tvSensorInfo: TextView
 
     // Adapters
     private lateinit var categoriaAdapter: CategoriaAdapter
@@ -99,8 +130,162 @@ class MainActivity : AppCompatActivity() {
         // Configurar Toolbar
         configurarToolbar()
 
+        // Inicializar sensor de luz
+        inicializarSensorDeLuz()
+
         // Cargar datos iniciales desde BD
         cargarPictogramasDesdeBaseDatos()
+    }
+
+    /**
+     * Inicializa el sensor de luz para ajuste automático de brillo
+     */
+    private fun inicializarSensorDeLuz() {
+        val sessionManager = (application as PictoCommApplication).sessionManager
+        brightnessAdjustmentEnabled = sessionManager.obtenerBrilloAutomatico()
+
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+
+        if (lightSensor == null) {
+            brightnessAdjustmentEnabled = false
+            tvSensorInfo.visibility = View.GONE
+        } else {
+            // Verificar permiso WRITE_SETTINGS
+            if (brightnessAdjustmentEnabled && !Settings.System.canWrite(this)) {
+                // Solicitar permiso
+                solicitarPermisoModificarBrillo()
+            }
+
+            // Mostrar indicador solo si el brillo automático está habilitado
+            tvSensorInfo.visibility = if (brightnessAdjustmentEnabled) View.VISIBLE else View.GONE
+        }
+    }
+
+    /**
+     * Solicita permiso para modificar el brillo del sistema
+     */
+    private fun solicitarPermisoModificarBrillo() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Permiso necesario")
+            .setMessage("Para ajustar el brillo automáticamente, PictoComm necesita permiso para modificar la configuración del sistema.\n\n¿Deseas otorgar este permiso?")
+            .setPositiveButton("Sí, otorgar") { dialog, _ ->
+                try {
+                    val intent = android.content.Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
+                    intent.data = android.net.Uri.parse("package:$packageName")
+                    startActivity(intent)
+
+                    Toast.makeText(
+                        this,
+                        "Por favor, activa el permiso 'Modificar ajustes del sistema' y regresa a la app",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } catch (e: Exception) {
+                    Toast.makeText(
+                        this,
+                        "No se pudo abrir la configuración de permisos",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("No") { dialog, _ ->
+                brightnessAdjustmentEnabled = false
+                tvSensorInfo.visibility = View.GONE
+                Toast.makeText(
+                    this,
+                    "El brillo automático está desactivado. Puedes activarlo desde Configuración.",
+                    Toast.LENGTH_LONG
+                ).show()
+                dialog.dismiss()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+    /**
+     * Ajusta el brillo de la pantalla según el nivel de luz ambiente
+     */
+    private fun ajustarBrilloPantalla(lux: Float) {
+        try {
+            // Verificar si podemos modificar el brillo del sistema
+            if (!Settings.System.canWrite(this)) {
+                android.util.Log.w("MainActivity", "No tiene permiso WRITE_SETTINGS")
+                return
+            }
+
+            val layoutParams = window.attributes
+
+            // Calcular brillo basado en lux (0.0 - 1.0)
+            // Valores típicos de lux:
+            // - 0-10: Muy oscuro
+            // - 10-50: Poca luz
+            // - 50-200: Luz interior normal
+            // - 200-500: Luz brillante
+            // - 500+: Muy brillante / Exterior
+            val brightness = when {
+                lux < 10 -> 0.2f          // Muy oscuro: brillo mínimo
+                lux < 50 -> 0.4f           // Poca luz: brillo bajo
+                lux < 200 -> 0.6f          // Normal: brillo medio
+                lux < 500 -> 0.8f          // Brillante: brillo alto
+                else -> 1.0f               // Muy brillante: brillo máximo
+            }
+
+            // Ajustar brillo solo si hay un cambio significativo
+            if (kotlin.math.abs(layoutParams.screenBrightness - brightness) > 0.05f) {
+                layoutParams.screenBrightness = brightness
+                window.attributes = layoutParams
+                android.util.Log.d("MainActivity", "Brillo ajustado a: ${(brightness * 100).toInt()}% (${lux.toInt()} lux)")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MainActivity", "Error al ajustar brillo", e)
+        }
+    }
+
+    /**
+     * Actualiza el indicador visual del sensor de luz
+     */
+    private fun actualizarIndicadorSensor(lux: Float) {
+        val layoutParams = window.attributes
+        val brightnessPercent = ((layoutParams.screenBrightness * 100).toInt())
+
+        val condicion = when {
+            lux < 10 -> "Muy Oscuro"
+            lux < 50 -> "Poca Luz"
+            lux < 200 -> "Normal"
+            lux < 500 -> "Brillante"
+            else -> "Muy Brillante"
+        }
+
+        tvSensorInfo.text = "💡 Sensor: ${lux.toInt()} lux\n🔆 Brillo: $brightnessPercent%\n📊 $condicion"
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // Verificar si ahora tiene el permiso (después de ir a configuración)
+        if (brightnessAdjustmentEnabled && !Settings.System.canWrite(this)) {
+            // Actualizar indicador para mostrar que falta permiso
+            tvSensorInfo.text = "⚠️ Falta permiso\nVe a Configuración\npara activar brillo\nautomático"
+            tvSensorInfo.visibility = View.VISIBLE
+        }
+
+        // Registrar el sensor de luz
+        if (brightnessAdjustmentEnabled && lightSensor != null && Settings.System.canWrite(this)) {
+            sensorManager.registerListener(
+                lightSensorListener,
+                lightSensor,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Desregistrar el sensor de luz para ahorrar batería
+        if (brightnessAdjustmentEnabled && lightSensor != null) {
+            sensorManager.unregisterListener(lightSensorListener)
+        }
     }
 
     /**
@@ -123,6 +308,7 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.progress_bar)
         tvEmptyState = findViewById(R.id.tv_empty_state)
         fabCrearPictograma = findViewById(R.id.fab_crear_pictograma)
+        tvSensorInfo = findViewById(R.id.tv_sensor_info)
     }
 
     /**
@@ -425,6 +611,11 @@ class MainActivity : AppCompatActivity() {
                 cambiarUsuario()
                 true
             }
+            R.id.action_configuracion -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivity(intent)
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -475,12 +666,6 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .show()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // No es necesario recargar aquí porque el Flow de Firebase
-        // se actualiza automáticamente en tiempo real
     }
 
     override fun onDestroy() {
